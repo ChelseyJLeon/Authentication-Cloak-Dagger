@@ -6,7 +6,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const encrypt = require("mongoose-encryption");
+// const encrypt = require("mongoose-encryption");
+const md5 = require("md5");
 
 //Creates constant for Express application
 const app = express();
@@ -33,8 +34,8 @@ const userSchema = new mongoose.Schema ({
   password: String
 });
 
-//Encrypts password
-userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ["password"] });
+// //Encrypts password
+// userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ["password"] });
 
 //Create new user model
 const User = mongoose.model("User", userSchema);
@@ -53,7 +54,7 @@ app.route("/login")
 //Allows user to Login
 .post(function(req, res){
   const username = req.body.username;
-  const password = req.body.password;
+  const password = md5(req.body.password);
 
   //Checks if the username matches a username in the system
   User.findOne({email: username}, function(err, foundUser){
@@ -81,7 +82,7 @@ app.route("/register")
   //Creates new user document from user input of their registration data
   const newUser = new User ({
     email: req.body.username,
-    password: req.body.password
+    password: md5(req.body.password)
   });
 
   //Saves the document and allows user access to the Secrets page
