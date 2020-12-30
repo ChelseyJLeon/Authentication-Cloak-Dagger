@@ -6,8 +6,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-// const encrypt = require("mongoose-encryption");
-const md5 = require("md5");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 
 //Creates constant for Express application
 const app = express();
@@ -34,9 +34,6 @@ const userSchema = new mongoose.Schema ({
   password: String
 });
 
-// //Encrypts password
-// userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ["password"] });
-
 //Create new user model
 const User = mongoose.model("User", userSchema);
 
@@ -54,7 +51,7 @@ app.route("/login")
 //Allows user to Login
 .post(function(req, res){
   const username = req.body.username;
-  const password = md5(req.body.password);
+  const password = req.body.password;
 
   //Checks if the username matches a username in the system
   User.findOne({email: username}, function(err, foundUser){
@@ -62,10 +59,12 @@ app.route("/login")
       console.log(err);
     } else {
       if(foundUser){
-        //Checks if the password matches the input
-        if(foundUser.password === password){
-          res.render("secrets");
-        };
+        // Load hash from your password DB.
+        bcrypt.compare(password, foundUser.password, function(err, result) {
+          if(result === true) {
+            res.render("secrets");
+          };
+        });
       };
     };
   });
@@ -79,20 +78,23 @@ app.route("/register")
 })
 //Updates database with registered user
 .post(function(req, res){
-  //Creates new user document from user input of their registration data
-  const newUser = new User ({
-    email: req.body.username,
-    password: md5(req.body.password)
-  });
+  //Uses bcyrpt to salt hash before storing
+  bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+    //Creates new user document from user input of their registration data
+    const newUser = new User ({
+      email: req.body.username,
+      password: hash
+    });
 
-  //Saves the document and allows user access to the Secrets page
-  newUser.save(function(err){
-    if(err){
-      console.log(err);
-    } else{
-      res.render("secrets");
-    };
-  });
+    //Saves the document and allows user access to the Secrets page
+    newUser.save(function(err){
+      if(err){
+        console.log(err);
+      } else{
+        res.render("secrets");
+      };
+    });
+});
 });
 
 

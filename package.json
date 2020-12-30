@@ -9,6 +9,7 @@
   "author": "Chelsey Leon",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.0.0",
     "body-parser": "^1.19.0",
     "d": "^1.0.1",
     "dotenv": "^8.2.0",
